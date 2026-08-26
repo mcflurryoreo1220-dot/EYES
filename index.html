@@ -19,10 +19,10 @@
         .btn-press { transition: transform 0.1s, box-shadow 0.1s; }
         .btn-press:active { transform: scale(0.95); box-shadow: inset 0 3px 5px rgba(0,0,0,0.2); }
         
-        /* 隱藏捲軸但可滾動 */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        .explanation-box { max-height: 120px; overflow-y: auto; }
     </style>
 </head>
 <body class="flex flex-col h-screen">
@@ -32,9 +32,17 @@
         <video id="video" autoplay playsinline muted></video>
         <div id="scan-line" class="scan-line"></div>
         <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
-            <span class="bg-black/60 text-white px-3 py-1 rounded-full text-sm font-bold shadow backdrop-blur-sm">🛡️ 職安衛快刷神眼</span>
+            <span class="bg-black/60 text-white px-3 py-1 rounded-full text-sm font-bold shadow backdrop-blur-sm">🛡️ 乙安快刷神眼 (升級版)</span>
             <span id="status-badge" class="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow animate-pulse">載入 AI 引擎中...</span>
         </div>
+        
+        <div class="absolute bottom-4 left-0 right-0 flex justify-center z-10 pointer-events-none">
+            <span class="bg-blue-600/80 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-md flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                自動對焦紙本/抗反光模式啟用
+            </span>
+        </div>
+        
         <!-- 準心提示 -->
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div class="w-3/4 h-1/2 border-2 border-white/30 rounded-lg relative">
@@ -72,12 +80,19 @@
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
             </div>
             <h2 class="text-xl font-bold text-slate-300 mb-2">匹配解答</h2>
-            <div id="modal-answer" class="text-7xl font-extrabold text-green-400 mb-6 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]">3</div>
+            <div id="modal-answer" class="text-7xl font-extrabold text-green-400 mb-2 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]">3</div>
             
-            <div class="bg-slate-900 rounded-xl p-4 w-full mb-6 text-left border border-slate-700">
-                <p class="text-xs text-slate-400 mb-1 font-semibold">對應題目：</p>
-                <p id="modal-question" class="text-sm text-slate-200 line-clamp-4">這是測試題目內容...</p>
-                <div class="mt-2 text-xs text-blue-400 font-bold">準確度得分: <span id="modal-score">95</span>%</div>
+            <div class="bg-slate-900 rounded-xl p-4 w-full mb-4 text-left border border-slate-700">
+                <p class="text-xs text-slate-400 mb-1 font-semibold">對應題目 (<span id="modal-score" class="text-green-400">95</span>%)：</p>
+                <p id="modal-question" class="text-sm text-slate-200 line-clamp-3 mb-2">這是測試題目內容...</p>
+                
+                <div class="border-t border-slate-700 pt-2 mt-2">
+                    <p class="text-xs text-blue-400 mb-1 font-bold flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        重點解析：
+                    </p>
+                    <p id="modal-explanation" class="text-sm text-slate-300 explanation-box leading-relaxed">解析載入中...</p>
+                </div>
             </div>
 
             <button id="close-modal-btn" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded-xl transition-colors text-lg">
@@ -473,6 +488,19 @@
             return bestMatch ? { item: bestMatch, score } : null;
         }
 
+        function getExplanation(text, ans) {
+            if(text.includes("罰鍰") || text.includes("處刑期")) return "【法規罰則】依職業安全衛生法規，違反防護設施規定將面臨行政罰鍰或刑責，旨在督促雇主落實安全管理，保護勞工生命。";
+            if(text.includes("墜落") || text.includes("高架") || text.includes("2公尺") || text.includes("安全網") || text.includes("屋頂")) return "【墜落危害預防】高處作業(2公尺以上)極易發生墜落危險。法規強制要求優先設置護欄、護蓋或安全網，其次才是要求勞工佩掛安全帶。";
+            if(text.includes("承攬") || text.includes("原事業單位") || text.includes("共同作業")) return "【承攬管理責任】事業單位交付承攬時，有事前告知危害之義務；共同作業時更須指定負責人統一指揮、設置協議組織，明確劃分安全責任。";
+            if(text.includes("漏電") || text.includes("感電") || text.includes("電擊") || text.includes("接地")) return "【電氣安全防護】為防範感電，潮濕場所或金屬良導體內作業，必須裝設高敏感度、高速型之漏電斷路器或自動電擊防止裝置，並確實做好設備接地。";
+            if(text.includes("局限空間") || text.includes("缺氧") || text.includes("通風")) return "【局限空間與缺氧】作業前必須實施通風換氣並測定氧氣及危害氣體濃度。空氣中氧氣濃度未滿 18% 即屬缺氧狀態，極具致命危險。";
+            if(text.includes("委員會") || text.includes("管理員") || text.includes("檢查")) return "【安全衛生組織管理】事業單位達一定規模需設職安衛委員會或配置專職管理人員。定期與重點檢查是落實 PDCA 循環，預防災害發生的基石。";
+            if(text.includes("堆高機") || text.includes("起重機") || text.includes("吊掛")) return "【危險性機械操作】起重機具與車輛系營建機械必須有防脫落、過捲預防等安全裝置。操作人員需經特殊訓練合格，吊掛運轉範圍嚴禁人員進入。";
+            if(text.includes("火災") || text.includes("爆炸") || text.includes("化學品") || text.includes("溶劑")) return "【化學品與火災防制】對於危害性化學品應落實標示並提供安全資料表(SDS)。動火或有機溶劑作業須確保通風良好，遠離發火源。";
+            
+            return "【法規綜合解析】此題測驗乙級職業安全衛生管理員之核心實務觀念。正確解答符合現行職安衛法規與標準，落實職場風險評估與危害控制。";
+        }
+
         const video = document.getElementById('video');
         const canvas = document.getElementById('capture-canvas');
         const scanBtn = document.getElementById('scan-btn');
@@ -506,9 +534,13 @@
 
         async function initSystem() {
             try {
-                // 1. 初始化相機 (盡量使用後鏡頭)
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                        advanced: [{ focusMode: "continuous" }]
+                    } 
                 });
                 video.srcObject = stream;
 
@@ -539,11 +571,14 @@
             scanBtnText.textContent = "掃描分析中...";
             scanLine.style.display = "block";
 
-            // 擷取畫面
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
+            
+            // 使用 CSS filter 進行對比度與灰階調整，大幅提升紙本印刷體與抗螢幕閃爍辨識率
+            ctx.filter = 'contrast(150%) grayscale(100%) brightness(110%)';
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none'; // 重置 filter 以免影響後續操作
 
             try {
                 // 執行 OCR
@@ -554,10 +589,10 @@
                 const result = findBestMatch(text);
 
                 if (result) {
-                    // 顯示成功彈窗
                     modalAnswer.textContent = result.item.ans.replace(/\s+/g, ' 或 '); // 處理合併題型
                     modalQuestion.textContent = `(題號 ${result.item.id}) ` + result.item.text;
                     modalScore.textContent = result.score;
+                    document.getElementById('modal-explanation').textContent = getExplanation(result.item.text, result.item.ans);
                     
                     modal.classList.remove('hidden');
                     // 些微延遲觸發動畫
@@ -621,6 +656,9 @@
                             <span class="text-2xl font-black text-green-400">${item.ans.replace(/\s+/g, ' 或 ')}</span>
                         </div>
                         <p class="text-sm text-slate-200 line-clamp-2">${item.text}</p>
+                        <p class="text-xs text-blue-300 mt-1 bg-blue-900/30 p-2 rounded border border-blue-800/50 leading-relaxed">
+                            💡 解析：${getExplanation(item.text, item.ans)}
+                        </p>
                     `;
                     searchResults.appendChild(card);
                     count++;
