@@ -43,13 +43,13 @@
             </span>
         </div>
         
-        <!-- 準心提示 -->
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div class="w-3/4 h-1/2 border-2 border-white/30 rounded-lg relative">
-                <div class="absolute -top-1 -left-1 w-4 h-4 border-t-4 border-l-4 border-green-400"></div>
-                <div class="absolute -top-1 -right-1 w-4 h-4 border-t-4 border-r-4 border-green-400"></div>
-                <div class="absolute -bottom-1 -left-1 w-4 h-4 border-b-4 border-l-4 border-green-400"></div>
-                <div class="absolute -bottom-1 -right-1 w-4 h-4 border-b-4 border-r-4 border-green-400"></div>
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+            <div id="target-box" class="w-11/12 h-[35%] border-2 border-green-500/80 rounded-xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] flex items-center justify-center">
+                <div class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-green-400 rounded-tl"></div>
+                <div class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-green-400 rounded-tr"></div>
+                <div class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-green-400 rounded-bl"></div>
+                <div class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-green-400 rounded-br"></div>
+                <span class="text-white/60 text-sm font-bold tracking-widest bg-black/40 px-4 py-1.5 rounded-full backdrop-blur-sm shadow-inner">請將單一題目置於框內</span>
             </div>
         </div>
     </div>
@@ -568,20 +568,33 @@
 
             // UI 狀態切換
             scanBtn.disabled = true;
-            scanBtnText.textContent = "掃描分析中...";
+            scanBtnText.textContent = "精準擷取範圍中...";
             scanLine.style.display = "block";
 
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            // 取得真實影片原始解析度
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
+            
+            // 核心優化：計算中心裁切區域 (對應 UI 上的目標框比例)
+            // 寬度取 90%，高度取 35% 以符合視覺上的瞄準框
+            const cropW = vw * 0.90;
+            const cropH = vh * 0.35;
+            const startX = (vw - cropW) / 2;
+            const startY = (vh - cropH) / 2;
+
+            canvas.width = cropW;
+            canvas.height = cropH;
             const ctx = canvas.getContext('2d');
             
-            // 使用 CSS filter 進行對比度與灰階調整，大幅提升紙本印刷體與抗螢幕閃爍辨識率
-            ctx.filter = 'contrast(150%) grayscale(100%) brightness(110%)';
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // 影像前處理升級：極致對比與亮度調整，消除螢幕閃爍與摩爾紋
+            ctx.filter = 'contrast(250%) grayscale(100%) brightness(130%)';
+            
+            // 關鍵修改：只繪製「裁切框」內的影像，拋棄周圍不相干的題目與雜訊
+            ctx.drawImage(video, startX, startY, cropW, cropH, 0, 0, cropW, cropH);
             ctx.filter = 'none'; // 重置 filter 以免影響後續操作
 
             try {
-                // 執行 OCR
+                // 執行 OCR (現在 AI 只需要辨識裁切後的一小塊乾淨影像)
                 const { data: { text } } = await tesseractWorker.recognize(canvas);
                 console.log("OCR 辨識結果:", text);
 
