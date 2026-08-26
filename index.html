@@ -32,7 +32,7 @@
         <video id="video" autoplay playsinline muted></video>
         <div id="scan-line" class="scan-line"></div>
         <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
-            <span class="bg-black/60 text-white px-3 py-1 rounded-full text-sm font-bold shadow backdrop-blur-sm">🛡️ 乙安快刷神眼 (升級版)</span>
+            <span class="bg-black/60 text-white px-3 py-1 rounded-full text-sm font-bold shadow backdrop-blur-sm">🛡️ 乙安全題型神眼 (學/術科)</span>
             <span id="status-badge" class="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow animate-pulse">載入 AI 引擎中...</span>
         </div>
         
@@ -79,12 +79,12 @@
             <div class="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mb-4">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
             </div>
-            <h2 class="text-xl font-bold text-slate-300 mb-2">匹配解答</h2>
+            <h2 id="modal-title-text" class="text-xl font-bold text-slate-300 mb-2">匹配解答</h2>
             <div id="modal-answer" class="text-7xl font-extrabold text-green-400 mb-2 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]">3</div>
             
             <div class="bg-slate-900 rounded-xl p-4 w-full mb-4 text-left border border-slate-700">
-                <p class="text-xs text-slate-400 mb-1 font-semibold">對應題目 (<span id="modal-score" class="text-green-400">95</span>%)：</p>
-                <p id="modal-question" class="text-sm text-slate-200 line-clamp-3 mb-2">這是測試題目內容...</p>
+                <p id="modal-question-title" class="text-xs text-slate-400 mb-1 font-semibold">對應題目/擷取內容：</p>
+                <p id="modal-question" class="text-sm text-slate-200 line-clamp-3 mb-2 overflow-y-auto max-h-20">這是測試題目內容...</p>
                 
                 <div class="border-t border-slate-700 pt-2 mt-2">
                     <p class="text-xs text-blue-400 mb-1 font-bold flex items-center gap-1">
@@ -488,6 +488,68 @@
             return bestMatch ? { item: bestMatch, score } : null;
         }
 
+        const oshExpertEngine = [
+            {
+                keywords: ["頻率", "FR", "失能傷害頻率"],
+                type: "術科計算題",
+                title: "失能傷害頻率 (FR) 計算",
+                explanation: "【解題公式】FR = (失能傷害人次數 / 總經歷工時) × 1,000,000。\n【專家提點】若題目提及死亡或永久全失能，計算「頻率(人次)」時僅算1人次，不要與嚴重率(損失日數)搞混。注意工時是否需扣除請假/加班。"
+            },
+            {
+                keywords: ["嚴重率", "SR", "失能傷害嚴重率", "損失日數"],
+                type: "術科計算題",
+                title: "失能傷害嚴重率 (SR) 計算",
+                explanation: "【解題公式】SR = (總失能傷害損失日數 / 總經歷工時) × 1,000,000。\n【專家提點】務必熟記：死亡或永久全失能 = 6,000日。暫時全失能依實際休養日數計算。若兩者同時發生，合併計算總日數。"
+            },
+            {
+                keywords: ["噪音", "暴露劑量", "分貝", "dBA", "容許耗費時間"],
+                type: "術科計算題",
+                title: "噪音暴露劑量計算",
+                explanation: "【解題公式】劑量 D = (C1/T1) + (C2/T2) + ... \n【專家提點】C為實際暴露時間，T為該音量之法規容許時間。基準：90dBA可暴露8小時，每增加5dBA時間減半(95dBA=4hr, 100dBA=2hr)。若 D > 1 即超標，需採取工程控制或戴防音防護具。"
+            },
+            {
+                keywords: ["是非", "O", "X", "正確", "錯誤"],
+                type: "術科是非/判斷題",
+                title: "法規與實務判斷",
+                explanation: "【專家提點】術科的是非題常在「數字（如2公尺、8小時、300人）」或「絕對性字眼（如：皆、必須、無須）」上設陷阱。請仔細核對題目中的法規條件是否有例外條款。"
+            },
+            {
+                keywords: ["通風", "換氣", "氣體", "濃度", "局限空間", "LEL", "缺氧"],
+                type: "術科綜合題",
+                title: "局限空間與通風換氣",
+                explanation: "【專家提點】若是計算題，注意整體換氣量(Q=V/t)或局部排氣氣罩公式。若是問答題，必須寫出標準作業程序：「測定(氧氣需>18%)」、「通風換氣」、「進入許可」、「配置監視人員」、「防護具(供氣式呼吸防護具)」。"
+            },
+            {
+                keywords: ["承攬", "原事業單位", "共同作業", "協議組織"],
+                type: "術科簡答題",
+                title: "承攬管理責任 (職安法§25-§27)",
+                explanation: "【法規關鍵字】必寫得分點：1. 事前告知危害、2. 共同作業時指定工作場所負責人擔任指揮協調、3. 設置協議組織並定期召開會議、4. 相關安全教育訓練之指導與協助。"
+            },
+            {
+                keywords: ["圖", "標示", "符號", "GHS", "防護具", "裝置"],
+                type: "術科辨識/配對題",
+                title: "危害圖形與防護辨識",
+                explanation: "【專家提點】若是 GHS 化學品標示（如火焰、骷髏頭、健康危害），需準確寫出對應的危害分類名稱。若是機械防護（如護罩、反撥預防裝置），需指明其對應之機械（如木材加工用圓盤鋸）。"
+            }
+        ];
+
+        function analyzePracticalExam(text) {
+            let matchedTopics = [];
+            for (let rule of oshExpertEngine) {
+                if (rule.keywords.some(kw => text.includes(kw))) {
+                    matchedTopics.push(rule);
+                }
+            }
+            if (matchedTopics.length > 0) {
+                return matchedTopics[0]; // 回傳最吻合的第一個術科領域
+            }
+            return {
+                type: "術科申論/綜合題",
+                title: "職安衛綜合管理實務",
+                explanation: "【申論框架提點】此為綜合型法規與管理實務題。作答時強烈建議套用「PDCA循環 (計畫、執行、查核、行動)」或「風險評估4步驟 (辨識、評估、控制、檢討)」的邏輯框架分點敘述，並適當引用職安法第6條(雇主責任)來提高閱卷委員的給分意願。"
+            };
+        }
+
         function getExplanation(text, ans) {
             if(text.includes("罰鍰") || text.includes("處刑期")) return "【法規罰則】依職業安全衛生法規，違反防護設施規定將面臨行政罰鍰或刑責，旨在督促雇主落實安全管理，保護勞工生命。";
             if(text.includes("墜落") || text.includes("高架") || text.includes("2公尺") || text.includes("安全網") || text.includes("屋頂")) return "【墜落危害預防】高處作業(2公尺以上)極易發生墜落危險。法規強制要求優先設置護欄、護蓋或安全網，其次才是要求勞工佩掛安全帶。";
@@ -572,49 +634,101 @@
             scanLine.style.display = "block";
 
             // 取得真實影片原始解析度
-            const vw = video.videoWidth;
-            const vh = video.videoHeight;
+            const rawW = video.videoWidth;
+            const rawH = video.videoHeight;
             
-            // 核心優化：計算中心裁切區域 (對應 UI 上的目標框比例)
-            // 寬度取 90%，高度取 35% 以符合視覺上的瞄準框
-            const cropW = vw * 0.90;
-            const cropH = vh * 0.35;
-            const startX = (vw - cropW) / 2;
-            const startY = (vh - cropH) / 2;
+            // 取得 UI 元素的實際大小與螢幕絕對位置
+            const videoRect = video.getBoundingClientRect();
+            const boxRect = document.getElementById('target-box').getBoundingClientRect();
+            
+            // 核心優化：解決 object-fit: cover 造成的座標錯位問題
+            // 1. 計算目標框相對於 video 容器的實際偏移量
+            const boxLeft = boxRect.left - videoRect.left;
+            const boxTop = boxRect.top - videoRect.top;
+            
+            // 2. 計算影片在容器內的縮放比例與畫面裁切偏移量
+            const rawRatio = rawW / rawH;
+            const domRatio = videoRect.width / videoRect.height;
+            
+            let scale, offsetX = 0, offsetY = 0;
+            
+            if (rawRatio > domRatio) {
+                // 影片比較寬，以高度為基準進行縮放，左右被裁切
+                scale = videoRect.height / rawH;
+                const renderedWidth = rawW * scale;
+                offsetX = (renderedWidth - videoRect.width) / 2;
+            } else {
+                // 影片比較高，以寬度為基準進行縮放，上下被裁切
+                scale = videoRect.width / rawW;
+                const renderedHeight = rawH * scale;
+                offsetY = (renderedHeight - videoRect.height) / 2;
+            }
+            
+            // 3. 換算出「視覺目標框」在「相機原始鏡頭像素」上的精確座標
+            const sourceX = (boxLeft + offsetX) / scale;
+            const sourceY = (boxTop + offsetY) / scale;
+            const sourceW = boxRect.width / scale;
+            const sourceH = boxRect.height / scale;
 
-            canvas.width = cropW;
-            canvas.height = cropH;
+            // 設定畫布為實際裁切的精準大小
+            canvas.width = sourceW;
+            canvas.height = sourceH;
             const ctx = canvas.getContext('2d');
             
-            // 影像前處理升級：極致對比與亮度調整，消除螢幕閃爍與摩爾紋
-            ctx.filter = 'contrast(250%) grayscale(100%) brightness(130%)';
+            // 影像前處理微調：保持高對比但避免過曝，適應螢幕翻拍
+            ctx.filter = 'contrast(200%) grayscale(100%) brightness(120%)';
             
-            // 關鍵修改：只繪製「裁切框」內的影像，拋棄周圍不相干的題目與雜訊
-            ctx.drawImage(video, startX, startY, cropW, cropH, 0, 0, cropW, cropH);
-            ctx.filter = 'none'; // 重置 filter 以免影響後續操作
+            // 關鍵修改：使用精算後的座標進行完美裁切 (所見即所得)
+            ctx.drawImage(video, sourceX, sourceY, sourceW, sourceH, 0, 0, sourceW, sourceH);
+            ctx.filter = 'none'; // 重置 filter
 
             try {
-                // 執行 OCR (現在 AI 只需要辨識裁切後的一小塊乾淨影像)
+                // 執行 OCR
                 const { data: { text } } = await tesseractWorker.recognize(canvas);
                 console.log("OCR 辨識結果:", text);
 
-                // 模糊比對
+                // 模糊比對 (針對學科單/複選題)
                 const result = findBestMatch(text);
 
-                if (result) {
-                    modalAnswer.textContent = result.item.ans.replace(/\s+/g, ' 或 '); // 處理合併題型
-                    modalQuestion.textContent = `(題號 ${result.item.id}) ` + result.item.text;
-                    modalScore.textContent = result.score;
-                    document.getElementById('modal-explanation').textContent = getExplanation(result.item.text, result.item.ans);
+                if (result && result.score > 40) {
+                    // 學科題庫吻合 (分數高於閾值)
+                    document.getElementById('modal-title-text').textContent = "🎯 學科匹配解答";
+                    modalAnswer.style.display = "block";
+                    modalAnswer.textContent = result.item.ans.replace(/\s+/g, ' 或 '); 
+                    document.getElementById('modal-question-title').innerHTML = `對應題庫 (<span class="text-green-400">${result.score}</span>%)：`;
+                    modalQuestion.textContent = result.item.text;
+                    document.getElementById('modal-explanation').innerHTML = getExplanation(result.item.text, result.item.ans);
                     
                     modal.classList.remove('hidden');
-                    // 些微延遲觸發動畫
                     setTimeout(() => {
                         modal.classList.remove('opacity-0', 'scale-95');
                         modal.classList.add('opacity-100', 'scale-100');
                     }, 10);
+                    
+                } else if (text.length > 8) {
+                    // 學科題庫找不到，判斷為「術科/新題型」，啟動專家解析引擎
+                    const expertAnalysis = analyzePracticalExam(text);
+                    
+                    document.getElementById('modal-title-text').textContent = "💡 " + expertAnalysis.type;
+                    modalAnswer.style.display = "none"; // 術科無單一選項，隱藏數字
+                    
+                    document.getElementById('modal-question-title').innerHTML = `AI 擷取內容分析：`;
+                    modalQuestion.textContent = text.substring(0, 100) + "..."; // 顯示擷取到的片段
+                    
+                    // 動態組合術科解析樣式
+                    document.getElementById('modal-explanation').innerHTML = `
+                        <strong class="text-yellow-400 text-base block mb-2">${expertAnalysis.title}</strong>
+                        <span class="leading-relaxed">${expertAnalysis.explanation.replace(/\n/g, '<br><br>')}</span>
+                    `;
+                    
+                    modal.classList.remove('hidden');
+                    setTimeout(() => {
+                        modal.classList.remove('opacity-0', 'scale-95');
+                        modal.classList.add('opacity-100', 'scale-100');
+                    }, 10);
+
                 } else {
-                    // 找不到時的小提示
+                    // 找不到且字數太少，提示重試
                     scanBtnText.textContent = "❌ 畫面不清晰，請再試一次";
                     setTimeout(() => {
                         scanBtnText.textContent = "立即掃描解題";
